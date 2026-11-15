@@ -191,4 +191,219 @@ header{justify-content:flex-start;gap:14px;min-height:62px}
 #sidebar{position:fixed;z-index:21;left:0;top:0;bottom:0;width:min(310px,86vw);padding:calc(16px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;background:linear-gradient(155deg,rgba(24,30,58,.97),rgba(7,10,22,.98));border-right:1px solid var(--gb);box-shadow:18px 0 55px rgba(0,0,0,.45);backdrop-filter:blur(24px);transform:translateX(-105%);transition:transform .28s ease}
 body.sidebar-open #sidebar{transform:translateX(0)}
 body.sidebar-open #side-shade{opacity:1;pointer-events:auto}
-#new-chat{width:100%;padding:13px 15px;text-align:left;border:1px solid rgba(255,255,255,.25);border-radius:13px;background:linear-gradient(120deg,#287cff,#3657e8);color:#fff;font:inherit;font-weight:700;
+#new-chat{width:100%;padding:13px 15px;text-align:left;border:1px solid rgba(255,255,255,.25);border-radius:13px;background:linear-gradient(120deg,#287cff,#3657e8);color:#fff;font:inherit;font-weight:700;box-shadow:0 8px 24px rgba(44,105,255,.3)}
+.history-heading{padding:9px 7px 2px;color:var(--m);font-size:10px;font-weight:800;letter-spacing:.16em}
+#history-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.history-item{width:100%;padding:11px 12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--t);font:inherit;font-size:13px}
+.history-item.active,.history-item:active{background:rgba(143,123,255,.18);border-color:rgba(143,123,255,.24)}
+.history-empty{padding:12px;color:var(--m);font-size:12px}
+#side-settings{display:flex;align-items:center;justify-content:flex-end;gap:10px;width:100%;padding:14px 12px;border:1px solid var(--gb);border-radius:13px;background:rgba(255,255,255,.07);color:var(--t);font:inherit;font-weight:600;text-align:right}
+.gear{font-size:18px;color:var(--c)}
+@media(max-width:420px){header{padding:11px 14px}.brand{font-size:20px}}
+
+.action-gate{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}.action-gate div{width:100%;font-size:12px;color:var(--m)}.action-gate button{min-width:76px}
+</style></head><body>
+<div id="bg"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+
+<div id="intro"><div id="it"></div></div>
+<header><button id="hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button><div class="brand" data-f>Venus</div><div class="head-spacer"></div></header>
+
+<div id="side-shade" aria-hidden="true"></div>
+<aside id="sidebar" aria-label="Chat navigation">
+  <button id="new-chat" type="button">＋　New Chat</button>
+  <div class="history-heading">CHAT HISTORY</div>
+  <div id="history-list" aria-live="polite"></div>
+  <button id="side-settings" type="button"><span class="gear">⚙</span><span>Settings</span></button>
+</aside>
+
+<section id="chat" class="on">
+<div id="log"></div>
+<div class="modelbar"><button id="modelPicker" type="button"><span id="currentModelLabel">No model selected</span><small>⌄</small></button><label class="auto-switch"><input type="checkbox" id="autoSwitch"><span>Auto switch</span></label></div>
+<div class="dock"><div id="menu"><button id="m1" data-f>Photos and videos</button><button id="m2" data-f>Files</button></div><div id="pend"></div><div class="field" id="field"><button id="plus" aria-label="Attach"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><input id="in" placeholder="Type a command or message" autocomplete="off"><button id="send">Send</button></div><input type="file" id="fi" multiple hidden></div>
+</section>
+<div id="model-sheet"><div class="model-sheet-inner"><h3>Available models</h3><div id="modelOptions"></div><button class="mini-btn" id="closeModelSheet" style="width:100%;margin-top:14px">Close</button></div></div>
+
+<section id="set">
+<div class="pg on" id="pg0">
+<div class="srow" data-go="1"><div><div class="st1" data-f>API Keys</div></div><i class="chev"></i></div>
+<div class="srow" data-go="3"><div><div class="st1" data-f>Permissions</div></div><i class="chev"></i></div>
+</div>
+<div class="pg" id="pg1">
+<button class="back" data-go="0">Back</button>
+<div class="card"><h2>Connect an API</h2><div class="sub">Add an API key, fetch its available models, and it will be saved securely on this device.</div>
+<label>API name</label><input class="api-form-input" type="text" id="apiName" placeholder="My OpenAI / Provider">
+<label>API base URL (OpenAI-compatible, Gemini or Anthropic)</label><input class="api-form-input" type="text" id="apiBase" value="https://openrouter.ai/api/v1" placeholder="https://api.example.com/v1">
+<label>API key</label><input class="api-form-input" type="password" id="apiKey" autocomplete="off" placeholder="Paste API key">
+<button class="save" id="fetchModels" style="margin-top:16px">Fetch Models</button><button class="mini-btn" id="cancelApiEdit" style="display:none;margin-top:8px;width:100%">Cancel Edit</button>
+<div id="apiStatus" role="status" aria-live="polite"></div><div id="fetchedModels"></div></div>
+<div class="card"><h2>Normal API</h2><div class="sub">Quick key-only setup. This uses the default OpenAI-compatible endpoint and the gpt-4o-mini model. For other providers, use Fetch Models above with their Base URL.</div>
+<label>API name (optional)</label><input class="api-form-input" type="text" id="normalApiName" placeholder="My Normal API">
+<label>API key</label><input class="api-form-input" type="password" id="normalApiKey" autocomplete="off" placeholder="Paste API key">
+<button class="save" id="saveNormalApi" style="margin-top:16px">Save Normal API</button><div id="normalApiStatus" role="status" aria-live="polite"></div></div>
+<div class="card"><h2>Saved APIs</h2><div class="sub">Remove a provider whenever you no longer need it.</div><div id="apiProfiles"><div class="hint">No APIs added yet.</div></div></div>
+</div>
+<div class="pg" id="pg3">
+<button class="back" data-go="0">Back</button>
+<div class="card"><h2 data-f>Permissions</h2><div id="plist"></div></div>
+</div>
+</section>
+
+<script>
+const $=s=>document.querySelector(s);
+const F=s=>[...s].map(c=>{const n=c.charCodeAt(0);return n>=65&&n<=90?String.fromCodePoint(0x1D63C+n-65):n>=97&&n<=122?String.fromCodePoint(0x1D656+n-97):c}).join('');
+document.querySelectorAll('[data-f]').forEach(e=>e.textContent=F(e.textContent));
+
+let apiProfiles=[],editingProfileId='';
+let modelPrefs={activeProfileId:'',activeModel:'',autoSwitch:false};
+try{modelPrefs={...modelPrefs,...JSON.parse(localStorage.getItem('venus_model_prefs')||'{}')}}catch(e){}
+function saveModelPrefs(){try{localStorage.setItem('venus_model_prefs',JSON.stringify(modelPrefs))}catch(e){}}
+function bridge(){return window.VenusAndroid&&typeof VenusAndroid.getApiProfiles==='function'}
+function readProfiles(){if(!bridge())return [];try{const a=JSON.parse(VenusAndroid.getApiProfiles()||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
+function enabledFor(p){const a=Array.isArray(p.enabledModels)?p.enabledModels:[];return a.length?a:p.models||[]}
+function allModelChoices(){const out=[];apiProfiles.forEach(p=>enabledFor(p).forEach(m=>out.push({profileId:p.id,profileName:p.name,model:m})));return out}
+function activeChoice(){let p=apiProfiles.find(x=>x.id===modelPrefs.activeProfileId);if(p&&(p.models||[]).includes(modelPrefs.activeModel)&&enabledFor(p).includes(modelPrefs.activeModel))return {profileId:p.id,profileName:p.name,model:modelPrefs.activeModel};const first=allModelChoices()[0];if(first){modelPrefs.activeProfileId=first.profileId;modelPrefs.activeModel=first.model;saveModelPrefs()}else{modelPrefs.activeProfileId='';modelPrefs.activeModel='';saveModelPrefs()}return first||null}
+function getCandidates(){const current=activeChoice();if(!current)return [];if(!modelPrefs.autoSwitch)return [current];const all=allModelChoices();const start=all.findIndex(x=>x.profileId===current.profileId&&x.model===current.model);return start<0?all:all.slice(start).concat(all.slice(0,start))}
+function updateModelLabel(){const c=activeChoice();$('#currentModelLabel').textContent=c?(c.model+' · '+c.profileName):'No model selected';$('#autoSwitch').checked=!!modelPrefs.autoSwitch}
+function renderProfiles(){const root=$('#apiProfiles');root.innerHTML='';if(!apiProfiles.length){const e=document.createElement('div');e.className='hint';e.textContent='No APIs added yet.';root.appendChild(e);return}apiProfiles.forEach(p=>{const box=document.createElement('div');box.className='api-profile';const head=document.createElement('div');head.className='api-profile-head';const name=document.createElement('span');name.textContent=p.name;const edit=document.createElement('button');edit.textContent='Edit';edit.onclick=()=>{editingProfileId=p.id;$('#apiName').value=p.name;$('#apiBase').value=p.baseUrl;$('#apiKey').value='';$('#apiStatus').textContent='Enter the replacement API key, then Fetch & Update. The saved key is never displayed.';$('#fetchModels').textContent='Fetch & Update Models';$('#cancelApiEdit').style.display='block';showPg(1);$('#apiKey').focus()};const del=document.createElement('button');del.textContent='Remove';del.onclick=()=>{if(!confirm('Remove '+p.name+' and its saved API key?'))return;const r=JSON.parse(VenusAndroid.deleteApiProfile(p.id));if(r.ok){apiProfiles=readProfiles();if(modelPrefs.activeProfileId===p.id){modelPrefs.activeProfileId='';modelPrefs.activeModel='';saveModelPrefs()}renderProfiles();renderModelOptions();updateModelLabel()}};head.append(name,edit,del);const info=document.createElement('small');info.textContent=(p.normal?'OpenAI API':p.baseUrl)+' · '+(p.models||[]).length+' models';box.append(head,info);root.appendChild(box)})}
+function renderModelOptions(){const root=$('#modelOptions');root.innerHTML='';if(!apiProfiles.length){const e=document.createElement('div');e.className='hint';e.textContent='Add an API in Settings to see models.';root.appendChild(e);return}apiProfiles.forEach(p=>{const title=document.createElement('div');title.style.cssText='color:var(--m);font-size:11px;font-weight:700;padding:12px 2px 5px';title.textContent=p.name;root.appendChild(title);(p.models||[]).forEach(model=>{const row=document.createElement('div');row.className='model-choice';const choose=document.createElement('button');choose.textContent=model+(modelPrefs.activeProfileId===p.id&&modelPrefs.activeModel===model?'  ✓':'');choose.disabled=!enabledFor(p).includes(model);choose.onclick=()=>{modelPrefs.activeProfileId=p.id;modelPrefs.activeModel=model;saveModelPrefs();updateModelLabel();renderModelOptions();$('#model-sheet').classList.remove('open')};const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=enabledFor(p).includes(model);enabled.title='Include in auto switch';enabled.onchange=()=>{const set=new Set(enabledFor(p));if(enabled.checked)set.add(model);else set.delete(model);if(!set.size){enabled.checked=true;return}p.enabledModels=[...set];try{const r=JSON.parse(VenusAndroid.updateApiProfile(JSON.stringify(p)));if(!r.ok)throw Error(r.error||'Could not update');updateModelLabel()}catch(e){enabled.checked=!enabled.checked;alert(e.message)}};row.append(choose,enabled);root.appendChild(row)})})}
+function reloadApis(){apiProfiles=readProfiles();if(!apiProfiles.some(p=>p.id===modelPrefs.activeProfileId)){modelPrefs.activeProfileId='';modelPrefs.activeModel=''}activeChoice();saveModelPrefs();renderProfiles();renderModelOptions();updateModelLabel()}
+$('#cancelApiEdit').onclick=()=>{editingProfileId='';$('#apiName').value='';$('#apiBase').value='https://openrouter.ai/api/v1';$('#apiKey').value='';$('#fetchModels').textContent='Fetch Models';$('#cancelApiEdit').style.display='none';$('#apiStatus').textContent='Edit cancelled.'};
+$('#fetchModels').onclick=()=>{const name=$('#apiName').value.trim(),baseUrl=$('#apiBase').value.trim(),key=$('#apiKey').value.trim();const status=$('#apiStatus');$('#fetchedModels').textContent='';if(!name||!baseUrl||!key){status.textContent='Cannot start: enter API name, HTTPS Base URL and API key.';return}if(!bridge()){status.textContent='Native API storage is available only inside the VENUS Android app.';return}status.textContent='Processing… connecting to provider and checking /models endpoint.';status.style.color='var(--m)';$('#fetchModels').disabled=true;setTimeout(()=>{try{const result=JSON.parse(VenusAndroid.fetchModels(baseUrl,key));if(!result.ok)throw Error(result.error||'Model fetching failed.');const models=result.models||[];if(!models.length)throw Error('The provider responded, but no model IDs were found. Check whether the provider is OpenAI-compatible, Gemini, or Anthropic and whether model listing is enabled.');status.textContent='Processing complete: '+models.length+' model(s) detected. Saving securely…';const id=editingProfileId||('api-'+Date.now()+'-'+Math.random().toString(36).slice(2,7));const profile={id,name,baseUrl,key,models,enabledModels:models};const saved=JSON.parse(VenusAndroid.saveApiProfile(JSON.stringify(profile)));if(!saved.ok)throw Error('Models fetched, but saving failed: '+(saved.error||'unknown storage error'));apiProfiles=readProfiles();editingProfileId='';$('#fetchModels').textContent='Fetch Models';$('#cancelApiEdit').style.display='none';modelPrefs.activeProfileId=saved.id||id;modelPrefs.activeModel=models[0];saveModelPrefs();$('#apiKey').value='';status.textContent='Success: fetching completed and API profile was saved securely. '+models.length+' models detected.';$('#fetchedModels').textContent=models.slice(0,24).join(' · ')+(models.length>24?' · +'+(models.length-24)+' more':'');status.style.color='var(--ok)';renderProfiles();renderModelOptions();updateModelLabel()}catch(e){status.textContent='Processing failed.\nReason: '+e.message+'\nCheck: (1) API key is correct and active, (2) Base URL is the API root and uses HTTPS, (3) provider Base URL and API format are correct (OpenAI-compatible, Gemini, or Anthropic). If this is not an OpenAI-compatible API, use a supported provider adapter.';status.style.color='var(--danger,#ff7474)'}finally{$('#fetchModels').disabled=false}},60)};
+$('#saveNormalApi').onclick=()=>{const name=$('#normalApiName').value.trim(),key=$('#normalApiKey').value.trim(),status=$('#normalApiStatus');if(!key){status.textContent='Paste an API key first.';return}if(!bridge()){status.textContent='Native API storage is available only inside the VENUS Android app.';return}$('#saveNormalApi').disabled=true;status.textContent='Processing… securely saving key.';setTimeout(()=>{try{const r=JSON.parse(VenusAndroid.saveNormalApi(name,key));if(!r.ok)throw Error(r.error||'Could not save key.');$('#normalApiKey').value='';status.textContent='Saved securely. Default endpoint: OpenAI-compatible API; model: gpt-4o-mini. This quick-save option is OpenAI-only. Use Fetch Models for OpenAI-compatible, Gemini, or Anthropic.';apiProfiles=readProfiles();modelPrefs.activeProfileId=r.id;modelPrefs.activeModel='gpt-4o-mini';saveModelPrefs();renderProfiles();renderModelOptions();updateModelLabel()}catch(e){status.textContent='Save failed: '+e.message}finally{$('#saveNormalApi').disabled=false}},30)};
+$('#modelPicker').onclick=()=>{$('#model-sheet').classList.add('open');renderModelOptions()};$('#closeModelSheet').onclick=()=>$('#model-sheet').classList.remove('open');$('#model-sheet').onclick=e=>{if(e.target.id==='model-sheet')$('#model-sheet').classList.remove('open')};
+$('#autoSwitch').onchange=()=>{modelPrefs.autoSwitch=$('#autoSwitch').checked;saveModelPrefs()};
+reloadApis();
+
+function showPg(i){[0,1,3].forEach(k=>$('#pg'+k).classList.toggle('on',k===i));if(i===3)syncPerms()}
+document.querySelectorAll('[data-go]').forEach(e=>e.onclick=()=>showPg(+e.dataset.go));
+function tab(n){if(n===2)showPg(0);$('#chat').classList.toggle('on',n===1);$('#set').classList.toggle('on',n===2)}
+
+let busyAsk=false,lastUser='';
+let chatId='chat-'+Date.now(),chatSessions=[];
+try{chatSessions=JSON.parse(localStorage.getItem('venus_chats')||'[]');if(!Array.isArray(chatSessions))chatSessions=[]}catch(e){chatSessions=[]}
+function currentMessages(){return [...$('#log').querySelectorAll('.m')].map(e=>{const c=e.cloneNode(true);c.querySelectorAll('button').forEach(b=>b.remove());return {role:e.classList.contains('u')?'user':'assistant',text:c.innerText||c.textContent||''}}).slice(-80)}
+function persistChat(){const messages=currentMessages();if(!messages.length)return;const first=messages.find(x=>x.role==='user');const title=(first?.text||'New Chat').replace(/\s+/g,' ').slice(0,42);let item=chatSessions.find(x=>x.id===chatId);if(!item){item={id:chatId,title,messages:[]};chatSessions.unshift(item)}item.title=title;item.messages=messages;chatSessions=chatSessions.slice(0,40);try{localStorage.setItem('venus_chats',JSON.stringify(chatSessions))}catch(e){}renderHistory()}
+function renderHistory(){const list=$('#history-list');if(!list)return;list.innerHTML='';if(!chatSessions.length){const empty=document.createElement('div');empty.className='history-empty';empty.textContent='Your chats will appear here';list.appendChild(empty);return}for(const item of chatSessions){const b=document.createElement('button');b.className='history-item'+(item.id===chatId?' active':'');b.textContent=item.title||'New Chat';b.onclick=()=>loadChat(item.id);list.appendChild(b)}}
+function loadChat(id){persistChat();const item=chatSessions.find(x=>x.id===id);if(!item)return;chatId=id;hist=(item.messages||[]).map(m=>m.role==='user'?{role:'user',content:m.text}:{role:'assistant',content:JSON.stringify({reply:m.text,action:null})}).slice(-12);$('#log').innerHTML='';for(const m of item.messages||[]){const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'a');d.textContent=m.text;$('#log').appendChild(d)}$('#log').scrollTop=1e9;renderHistory();closeSidebar();tab(1)}
+function newChat(){persistChat();chatId='chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);hist=[];$('#log').innerHTML='';renderHistory();closeSidebar();tab(1);$('#in').focus()}
+function openSidebar(){document.body.classList.add('sidebar-open');$('#hamburger').setAttribute('aria-expanded','true')}
+function closeSidebar(){document.body.classList.remove('sidebar-open');$('#hamburger').setAttribute('aria-expanded','false')}
+$('#hamburger').onclick=()=>document.body.classList.contains('sidebar-open')?closeSidebar():openSidebar();$('#side-shade').onclick=closeSidebar;$('#new-chat').onclick=newChat;$('#side-settings').onclick=()=>{closeSidebar();tab(2);showPg(0)};renderHistory();
+
+function add(c,t){const d=document.createElement('div');d.className='m '+c;$('#log').appendChild(d);if(c==='a'&&t!=='...')type(d,t);else d.textContent=t;$('#log').scrollTop=1e9;persistChat();return d}
+function type(el,t){return new Promise(r=>{el.textContent='';const raw=String(t);if(/```/.test(raw)||raw.length>700){el.textContent=raw;$('#log').scrollTop=1e9;return r()}const a=[...F(raw)];if(!a.length)return r();const tn=document.createTextNode('');el.insertBefore(tn,el.firstChild);el.classList.add('typing');const d=Math.max(8,Math.min(30,4000/a.length));let i=0;const tm=setInterval(()=>{tn.data+=a[i++];$('#log').scrollTop=1e9;if(i>=a.length){clearInterval(tm);el.classList.remove('typing');persistChat();r()}},d)})}
+
+const APPS={whatsapp:'com.whatsapp',youtube:'com.google.android.youtube',facebook:'com.facebook.katana',instagram:'com.instagram.android',chrome:'com.android.chrome',maps:'com.google.android.apps.maps',gmail:'com.google.android.gm',telegram:'org.telegram.messenger',messenger:'com.facebook.orca',tiktok:'com.zhiliaoapp.musically',spotify:'com.spotify.music',playstore:'com.android.vending',camera:'com.android.camera',settings:'com.android.settings'};
+const PANELS={nfc:'NFC_SETTINGS',wifi:'WIFI_SETTINGS',data:'DATA_ROAMING_SETTINGS',bluetooth:'BLUETOOTH_SETTINGS',airplane:'AIRPLANE_MODE_SETTINGS',location:'LOCATION_SOURCE_SETTINGS',sound:'SOUND_SETTINGS',display:'DISPLAY_SETTINGS',main:'SETTINGS'};
+
+function sys(){return `You are Venus, an AI assistant running on the user's Android phone. Reply ONLY with one JSON object: {"reply":"helpful concise reply in the same language the user uses","action":null or one action}.
+Actions: {"type":"open_url","url":""} {"type":"open_app","app":"name","package":"android package if known"} {"type":"play_search","query":"game or app name"} {"type":"call","to":"contact name or number"} {"type":"sms","to":"","text":""} {"type":"whatsapp","to":"","text":""} {"type":"settings","panel":"wifi|data|bluetooth|airplane|location|sound|display|main"} {"type":"toggle","setting":"wifi|bluetooth|data|airplane|location|nfc|hotspot|flashlight|other","state":"on|off","name":"setting name if other"} {"type":"task","goal":"full description of a multi-step job to do by operating apps on the phone, e.g. open YouTube, find a channel, open a video and post a comment. Include the app name, the exact text to write, and when to stop"}. Use task only for jobs that need several taps inside an app; use the simple actions above for everything else.
+Optional safe Termux actions: {"type":"termux_safe","command":"pwd|list|make_folder","argument":"folder name only for make_folder"}. Never suggest arbitrary shell commands, scripts, package installation, deletion, permission changes, or commands outside this allowlist. Every action requires the user to tap Accept. Use action null for normal conversation. Keep replies clear and concise. The user's contacts are on the phone: for call, sms or whatsapp put the spoken contact name or number in "to".
+Rules: anything that needs operating apps goes in action task with a complete goal: searching and playing a YouTube video, sending a message to a contact on WhatsApp, Telegram or Messenger, installing a game or app from the Play Store, or taking the user to a settings page that the settings action does not cover. Examples of goal: 'Open the YouTube app, tap search, type technogamer, press enter, then tap the first video so it plays'; 'Open WhatsApp, tap search, type Rahim, open his chat, type the message hello and tap send'; 'Open the Play Store, search Subway Surfers, open the first result and tap Install'. When the user asks to turn something on or off (on kor, off kor, chalu, bondho, enable, disable) always use toggle, never settings. Use settings only when the user asks to be taken to or shown a settings page (niye jao, kholo, dekhao). For coding requests put the full code in a fenced code block inside reply and keep the sentence around it short.`}
+
+function num(to){to=String(to||'');return /^[+\d\s-]{6,}$/.test(to)?to.replace(/[^\d+]/g,''):null}
+function dial(a,n){const e=encodeURIComponent,p=String(n).replace(/[^\d+]/g,''),d=p.replace(/\D/g,'').replace(/^0+/,'');
+location.href=a.type==='call'?'tel:'+p:a.type==='sms'?`sms:${p}?body=${e(a.text||'')}`:`https://wa.me/${d}?text=${e(a.text||'')}`}
+function pick(a){
+if(window.VenusAndroid){const n=VenusAndroid.findContact(String(a.to||''));if(n){dial(a,n);return}}
+if(!('contacts' in navigator)){add('a','Contact access is not supported in this browser. Please say the full phone number.');return}
+const m=add('a','Choose "'+a.to+'" from your contacts to continue.');
+const b=document.createElement('button');b.textContent='Open contacts';
+b.onclick=async()=>{try{const r=await navigator.contacts.select(['name','tel'],{multiple:false});if(r[0]&&r[0].tel&&r[0].tel[0])dial(a,r[0].tel[0])}catch(e){add('a','Could not access contacts.')}};
+m.appendChild(document.createElement('br'));m.appendChild(b)}
+
+function toggle(a){const st=String(a.state||'on').toLowerCase()==='off'?'OFF':'ON',nm=a.setting==='other'?(a.name||'setting'):a.setting;
+if(PANELS[a.setting]&&!['main','sound','display'].includes(a.setting)){location.href='intent:#Intent;action=android.settings.'+PANELS[a.setting]+';end';
+agent('The '+nm+' settings screen is open now. Turn '+nm+' '+st+': find its main on/off switch and click it only if its state is not '+st+'. Then finish with done and tell the user the result. Do not leave this screen.',2200)}
+else agent('Turn '+nm+' '+st+'. Use act quick to open the quick settings panel, find the '+nm+' tile and click it only if it is not already '+st+'; if there is no such tile, open the Settings app and find it there. Then finish with done and tell the user the result.',300)}
+function run(a){if(a.type==='settings'&&/(\bon\b|\boff\b|চালু|বন্ধ|অন|অফ|চালাও|enable|disable)/i.test(lastUser)&&!/(niye|নিয়ে|jao|যাও|দেখাও|dekhao|show me|take me|go to)/i.test(lastUser))a={type:'toggle',setting:a.panel,state:/(\boff\b|বন্ধ|অফ|disable)/i.test(lastUser)?'off':'on'};
+if(a.type==='toggle'||a.type==='task'){add('a','This action needs Android Accessibility control, which is not included in this build. Files Access and Notifications remain the only app permissions.');return}
+if(a.type==='termux_safe'){const ok=!!(window.VenusAndroid&&VenusAndroid.runSafeCommand(String(a.command||''),String(a.argument||'')));add('a',ok?'Approved safe command sent to Termux.':'Termux is not installed, not configured, or the command was not allowed.');return}
+let u=null;const e=encodeURIComponent;
+if(a.type==='open_url')u=/^https?:/.test(a.url)?a.url:'https://'+a.url;
+else if(a.type==='open_app'){const p=a.package||APPS[String(a.app||'').toLowerCase().replace(/\s/g,'')];
+if(!p){add('a','I could not find that app. Try searching for it in the Play Store.');return}
+u=`intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${p};end`}
+else if(a.type==='play_search')u='market://search?q='+e(a.query)+'&c=apps';
+else if(a.type==='settings')u=`intent:#Intent;action=android.settings.${PANELS[a.panel]||'SETTINGS'};end`;
+else if(a.type==='task'){agent(a.goal);return}
+else if(['call','sms','whatsapp'].includes(a.type)){const n=num(a.to);if(n)dial(a,n);else pick(a);return}
+if(u)location.href=u}
+
+let agentBusy=false;
+const AGENT_SYS=`You control an Android phone through its accessibility tree to finish a goal. Each turn you get the GOAL, the STEPS already done, and the current SCREEN as lines: id|kind|text|description|flags (c=clickable e=editable s=scrollable, ON/OFF = current state of a switch). Reply ONLY with one JSON object: {"act":"open|click|type|enter|scroll|back|home|wait|quick|done","id":number,"text":"text to type","dir":"down|up","app":"app name","package":"android package name","say":"short message to the user in their language"}.
+open = launch an app (give package). click = tap element id. type = write text into editable element id. enter = press search/enter on editable element id. scroll = scroll the main list. wait = wait for loading. quick = pull down the quick settings panel (each tile shows its state in the description). done = goal finished or impossible, put the result in say. Do ONE step per turn. Never enter passwords or payment details. To search: click the search box or icon, type the text, use enter on the same editable element, then click the wanted result. In the Play Store click the Install button. For a switch, click it only if its state differs from what was asked. Be fast, one step per turn. If you are unsure or stuck, finish with done and explain.`;
+async function agent(goal,w0){add('a','Multi-step screen automation is not enabled in this build. It requires Android Accessibility access, which is intentionally not requested.');}
+
+
+function recoverableModelFailure(err){const m=String(err&&err.message||err).toLowerCase();return /http (408|429|5\d\d)|timed? out|timeout|took too long|server not found|network|connection reset|failed to connect|temporarily unavailable/.test(m)}
+let hist=[];
+async function ask(text,files=[]){
+const ub=add('u',text);showAtt(ub,files);
+const candidates=getCandidates();if(!candidates.length){add('a','Please add an API key and fetch its models in Settings.');tab(2);showPg(1);return}
+const th=add('a','...');busyAsk=true;lastUser=text;
+let content=text;const note=files.length?' [attached: '+files.map(f=>f.name).join(', ')+']':'';hist.push({role:'user',content:text+note});hist=hist.slice(-12);
+try{
+if(files.length){content=[{type:'text',text:text||'Please look at the attached file(s).'}];for(const f of files)content.push(await part(f))}
+const msgs=[{role:'system',content:sys()},...hist.slice(0,-1),{role:'user',content}];
+let j=null,lastError=null,used=null;
+for(const candidate of candidates){try{const response=VenusAndroid.completeChat(candidate.profileId,JSON.stringify({model:candidate.model,messages:msgs}));j=JSON.parse(response||'{}');if(j.error)throw new Error(j.error.message||'API request failed.');if(!j.choices||!j.choices[0]||!j.choices[0].message)throw new Error('The API returned an unexpected chat response.');used=candidate;break}catch(err){lastError=err;if(!modelPrefs.autoSwitch||!recoverableModelFailure(err))break}}
+if(!used)throw (lastError||new Error('No enabled model could answer.'));
+modelPrefs.activeProfileId=used.profileId;modelPrefs.activeModel=used.model;saveModelPrefs();updateModelLabel();
+const raw=j.choices[0].message.content||'';hist.push({role:'assistant',content:raw});
+let o;try{o=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1))}catch(e){o={reply:raw,action:null}}
+busyAsk=false;await type(th,o.reply||'');persistChat();
+if(o.action){
+ const gate=document.createElement('div');gate.className='action-gate';
+ const label=document.createElement('div');label.textContent='Suggested action: '+String(o.action.type||'action');gate.appendChild(label);
+ const yes=document.createElement('button');yes.textContent='Accept';yes.onclick=()=>{yes.disabled=true;no.disabled=true;run(o.action)};
+ const no=document.createElement('button');no.textContent='Deny';no.onclick=()=>{yes.disabled=true;no.disabled=true;add('a','Action cancelled.')};
+ gate.appendChild(yes);gate.appendChild(no);th.appendChild(gate)
+}
+}catch(e){busyAsk=false;th.textContent='Error: '+e.message}}
+
+function send(){const t=$('#in').value.trim();if(!t&&!pend.length)return;$('#in').value='';const f=pend;pend=[];renderPend();ask(t,f)}
+$('#send').onclick=send;$('#in').onkeydown=e=>{if(e.key==='Enter')send()};
+
+let pend=[];
+function renderPend(){const p=$('#pend');p.innerHTML='';pend.forEach((f,i)=>{const c=document.createElement('div');c.className='chip';
+if(f.type.startsWith('image/')){const im=document.createElement('img');im.src=URL.createObjectURL(f);c.appendChild(im)}
+const n=document.createElement('span');n.textContent=f.name;c.appendChild(n);
+const x=document.createElement('button');x.textContent='\u00d7';x.onclick=()=>{pend.splice(i,1);renderPend()};c.appendChild(x);p.appendChild(c)});p.style.display=pend.length?'flex':'none'}
+function showAtt(b,files){files.forEach(f=>{const u=URL.createObjectURL(f);let e;
+if(f.type.startsWith('image/')){e=document.createElement('img');e.src=u}
+else if(f.type.startsWith('video/')){e=document.createElement('video');e.src=u;e.controls=true}
+else{e=document.createElement('div');e.className='file';e.textContent=f.name}
+e.classList.add('att');b.appendChild(e)})}
+async function part(f){
+if(f.type.startsWith('text/')||/\.(txt|md|csv|json|js|html|css|py|xml|log)$/i.test(f.name))return{type:'text',text:'File '+f.name+':\n'+(await f.text()).slice(0,30000)};
+const url=await new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
+if(f.type.startsWith('image/'))return{type:'image_url',image_url:{url}};
+if(f.type.startsWith('video/'))return{type:'video_url',video_url:{url}};
+return{type:'file',file:{filename:f.name,file_data:url}}}
+$('#plus').onclick=e=>{e.stopPropagation();$('#menu').classList.toggle('open')};
+document.addEventListener('click',()=>$('#menu').classList.remove('open'));
+$('#m1').onclick=()=>{$('#fi').accept='image/*,video/*';$('#fi').click()};
+$('#m2').onclick=()=>{$('#fi').accept='*/*';$('#fi').click()};
+$('#fi').onchange=e=>{for(const f of e.target.files){if(f.size>20*1024*1024){add('a',f.name+' is larger than 20 MB.');continue}pend.push(f)}e.target.value='';renderPend()};
+
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),3500)}
+const PM={
+files:{n:'Files Access',go:async()=>{if(window.VenusAndroid&&typeof VenusAndroid.chooseWorkspace==='function'){await VenusAndroid.chooseWorkspace();return}if(typeof window.showDirectoryPicker==='function'){await window.showDirectoryPicker();return}const picker=document.createElement('input');picker.type='file';picker.multiple=true;picker.onchange=()=>picker.files.length?toast('Files access is available for the selected files.'):toast('No files selected.');picker.click()}},
+notif:{n:'Notifications',go:async()=>{if(window.VenusAndroid&&typeof VenusAndroid.requestNotifications==='function'){await VenusAndroid.requestNotifications();return}if(!('Notification' in window))throw new Error('Notifications are not supported');if(await Notification.requestPermission()!=='granted')throw new Error('Notifications permission denied')}}
+};
+let permSaved={};try{permSaved=JSON.parse(localStorage.getItem('venus_perm')||'{}')}catch(e){}
+let pstate={files:!!permSaved.files,notif:!!permSaved.notif};
+function renderPerms(){const l=$('#plist');l.innerHTML='';for(const k of ['files','notif']){const r=document.createElement('div');r.className='prow';const n=document.createElement('span');n.textContent=F(PM[k].n);r.appendChild(n);if(pstate[k]){const t=document.createElement('i');t.className='tick';r.appendChild(t)}else{const b=document.createElement('button');b.className='turn';b.textContent='Turn on';b.onclick=()=>askPerm(k);r.appendChild(b)}l.appendChild(r)}}
+async function askPerm(k){try{await PM[k].go();pstate[k]=true;permSaved[k]=true;try{localStorage.setItem('venus_perm',JSON.stringify(permSaved))}catch(e){}}catch(e){toast(e.message||'Permission not granted.')}renderPerms()}
+async function syncPerms(){if('Notification' in window)pstate.notif=Notification.permission==='granted'||!!permSaved.notif;else pstate.notif=!!permSaved.notif;if(window.VenusAndroid&&typeof VenusAndroid.hasPerm==='function')pstate.files=!!VenusAndroid.hasPerm('files')||!!permSaved.files;else pstate.files=!!permSaved.files;renderPerms()}
+
+(async()=>{
+const it=$('#it'),ov=$('#intro');
+let seen=false;try{seen=localStorage.getItem('venus_seen')==='1'}catch(e){}
+const play=t=>new Promise(r=>{it.className='sh';it.style.opacity=1;it.textContent='';const a=[...F(t)],tn=document.createTextNode('');it.appendChild(tn);it.classList.add('typing');let k=0;const tm=setInterval(()=>{tn.data+=a[k++];if(k>=a.length){clearInterval(tm);it.classList.remove('typing');setTimeout(()=>{it.style.opacity=0;setTimeout(r,750)},1200)}},85)});
+if(seen)await play('WELCOME BACK');else{await play('WELCOME');await play('START YOUR LIFE GROWTH')}
+try{localStorage.setItem('venus_seen','1')}catch(e){}
+ov.classList.add('out');setTimeout(()=>ov.remove(),1000)})();
+</script><div id="toast"></div>
+</body></html>

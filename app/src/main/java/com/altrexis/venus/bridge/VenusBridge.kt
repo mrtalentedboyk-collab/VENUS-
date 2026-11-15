@@ -2,6 +2,7 @@ package com.altrexis.venus.bridge
 
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import org.json.JSONObject
 import com.altrexis.venus.MainActivity
 import com.altrexis.venus.ai.AIManager
 import com.altrexis.venus.files.FileManager
@@ -37,6 +38,16 @@ class VenusBridge(
     @JavascriptInterface fun getApiProfiles(): String = ai.profilesJson()
     @JavascriptInterface fun deleteApiProfile(id: String): String = ai.deleteProfile(id)
     @JavascriptInterface fun completeChat(profileId: String, requestJson: String): String = ai.complete(profileId, requestJson)
+
+    // Runs the network request on a background thread so the screen never freezes.
+    @JavascriptInterface fun completeChatAsync(callId: String, profileId: String, requestJson: String) {
+        Thread {
+            val result = ai.complete(profileId, requestJson)
+            val js = "window.__chatDone(" + JSONObject.quote(callId) + "," +
+                JSONObject.quote(result).replace("\u2028", "\\u2028").replace("\u2029", "\\u2029") + ")"
+            webView.post { webView.evaluateJavascript(js, null) }
+        }.start()
+    }
 
     @JavascriptInterface fun notifyTaskDone(title: String, message: String) {
         activity.runOnUiThread { runtime.notifications.show(title, message) }

@@ -208,31 +208,37 @@ class AIManager(context: Context) {
     }
 
     fun saveNormalApi(nameRaw: String, keyRaw: String): String = try {
-        val name = nameRaw.trim().ifBlank { "OpenAI API" }.take(60)
         val secret = keyRaw.trim()
         require(secret.isNotBlank() && secret.length <= 4096) { "Paste a valid API key first." }
-        val checked = JSONObject(fetchModels("https://api.openai.com/v1", secret))
+        // Provider is detected from the key prefix.
+        val (label, base, preferred) = when {
+            secret.startsWith("sk-or-") -> Triple("OpenRouter", "https://openrouter.ai/api/v1", "openai/gpt-4o-mini")
+            secret.startsWith("sk-ant-") -> Triple("Anthropic", "https://api.anthropic.com/v1", "claude-3-5-haiku-latest")
+            secret.startsWith("AIza") -> Triple("Gemini", "https://generativelanguage.googleapis.com/v1beta", "gemini-2.0-flash")
+            else -> Triple("OpenAI", "https://api.openai.com/v1", "gpt-4o-mini")
+        }
+        val name = nameRaw.trim().ifBlank { "$label API" }.take(60)
+        val checked = JSONObject(fetchModels(base, secret))
         require(checked.optBoolean("ok")) {
-            checked.optString("error", "OpenAI API key validation failed.")
+            checked.optString("error", "$label API key validation failed.")
         }
         val models = checked.optJSONArray("models") ?: JSONArray()
-        var hasDefault = false
-        for (i in 0 until models.length()) if (models.optString(i) == "gpt-4o-mini") hasDefault = true
-        require(hasDefault) {
-            "The key is valid, but gpt-4o-mini is not available to this account. Use Fetch Models to choose an available model."
-        }
+        var chosen = ""
+        for (i in 0 until models.length()) if (models.optString(i) == preferred) chosen = preferred
+        if (chosen.isEmpty()) chosen = models.optString(0)
+        require(chosen.isNotEmpty()) { "The key is valid, but no models are available. Use Fetch Models." }
         val id = "normal-" + java.util.UUID.randomUUID().toString()
-        val selected = JSONArray().put("gpt-4o-mini")
+        val selected = JSONArray().put(chosen)
         val profile = JSONObject()
             .put("id", id).put("name", name)
-            .put("baseUrl", "https://api.openai.com/v1")
+            .put("baseUrl", base)
             .put("key", secret).put("models", models)
             .put("enabledModels", selected).put("normal", true)
-            .put("provider", Provider.OPENAI_COMPATIBLE.name)
+            .put("provider", provider(base).name)
         val all = readAll()
         all.put(profile)
         writeAll(all)
-        JSONObject().put("ok", true).put("id", id).put("model", "gpt-4o-mini").toString()
+        JSONObject().put("ok", true).put("id", id).put("model", chosen).put("provider", label).toString()
     } catch (e: Exception) {
         JSONObject().put("ok", false).put("error", e.message ?: "Could not validate or save API key.").toString()
     }
